@@ -29,7 +29,6 @@ bot = telebot.TeleBot('7115522268:AAFoTHMK--OYTBFi-l773-vFCRkaG5BVv38')
 def send_commands_list(chat_id):
     commands_list = ""
     commands_list += "/help - Показать список команд\n"
-    commands_list += "/view_information - Личные данные\n"
     commands_list += "/training - Информация об обучении\n"
     commands_list += "/grade - Успеваемость\n"
     commands_list += "/grade - Расписание\n"
@@ -105,7 +104,8 @@ def training_command(message):
     group = types.KeyboardButton('Группа')
     the_form_of_education = types.KeyboardButton('Форма обучения')
     back_button = types.KeyboardButton('Назад')
-    markup.add(number_book_study, status, direction, institute, department, group, the_form_of_education, back_button)
+    penis_button = types.KeyboardButton('prekol')
+    markup.add(number_book_study, status, direction, institute, department, group, the_form_of_education, penis_button, back_button)
     bot.send_message(message.chat.id, '⇓ ⇓ Выберите нужную кнопку ⇓ ⇓ :', reply_markup=markup)
 
 
