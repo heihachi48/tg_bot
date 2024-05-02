@@ -6,6 +6,7 @@ from datetime import datetime
 
 reminder_sent = False
 
+user_nexus = {}
 
 def connect_to_database():
     try:
@@ -23,6 +24,28 @@ def connect_to_database():
         return None
 
 
+def execute_query(query, params=None):
+    connection = connect_to_database()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            if params:
+                cursor.execute(query, params)
+            else:
+                cursor.execute(query)
+            result = cursor.fetchall()
+            connection.commit()  # Фиксация изменений (если есть)
+            cursor.close()
+            connection.close()
+            return result
+        except psycopg2.Error as error:
+            print("Error executing query:", error)
+            return None
+    else:
+        print("No database connection")
+        return None
+
+
 bot = telebot.TeleBot('7115522268:AAFoTHMK--OYTBFi-l773-vFCRkaG5BVv38')
 
 
@@ -31,7 +54,7 @@ def send_commands_list(chat_id):
     commands_list += "/help - Показать список команд\n"
     commands_list += "/training - Информация об обучении\n"
     commands_list += "/grade - Успеваемость\n"
-    commands_list += "/grade - Расписание\n"
+    commands_list += "/распиание - Расписание\n"
     commands_list += "/user_info - Получить информацию о пользователе\n"
     commands_list += "/exit - Завершить сессию работы с ботом\n"
     bot.send_message(chat_id, commands_list, parse_mode='html')
@@ -48,6 +71,8 @@ def authenticate_user(username, password_hash, message):
             connection.close()
             if user_exists:
                 send_commands_list(message.chat.id)
+                # TODO: это моя хуйня сравнивает с клиентом и бд
+                user_nexus[message.chat.id] = username
             else:
                 bot.send_message(message.chat.id, "Неверный логин или пароль. Попробуйте снова.")
                 check_username(message)
@@ -81,42 +106,60 @@ def help_command(message):
     send_commands_list(message.chat.id)
 
 
-# @bot.message_handler(commands=['view_information'])
-# def view_information_command(message):
-#     markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-#     personal_date = types.KeyboardButton('Паспортные данные')
-#     snils = types.KeyboardButton('Снилс')
-#     education = types.KeyboardButton('Образование')
-#     back_button = types.KeyboardButton('Назад')
-#     penis_button = types.KeyboardButton('prekol')
-#     markup.add(personal_date, snils, education, penis_button, back_button)
-#     bot.send_message(message.chat.id, '⇓ ⇓ Выберите нужную кнопку ⇓ ⇓ :', reply_markup=markup)
+# @bot.message_handler(commands=['training'])
+# def number_book_study_handler(message):
+#     query = ""
+#     result = execute_query(query)
+#     bot.send_message(message.chat.id, '⇓ ⇓ Ваша информация ⇓ ⇓ ', str(result))
 
 
 @bot.message_handler(commands=['training'])
-def training_command(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    number_book_study = types.KeyboardButton('Номер зачетной книжки')
-    status = types.KeyboardButton('Статус')
-    direction = types.KeyboardButton('Направление')
-    institute = types.KeyboardButton('Институт')
-    department = types.KeyboardButton('Кафедра')
-    group = types.KeyboardButton('Группа')
-    the_form_of_education = types.KeyboardButton('Форма обучения')
-    back_button = types.KeyboardButton('Назад')
-    penis_button = types.KeyboardButton('prekol')
-    markup.add(number_book_study, status, direction, institute, department, group, the_form_of_education, penis_button, back_button)
-    bot.send_message(message.chat.id, '⇓ ⇓ Выберите нужную кнопку ⇓ ⇓ :', reply_markup=markup)
+def number_book_study_handler(message):
+    username = message.from_user.username
+    connection = connect_to_database()
+    if connection:
+        try:
+            cursor = connection.cursor()
+            cursor.execute("""
+                SELECT u.full_name, t.number_zb, t.direction, t.institute, t.department, t.group_s
+                FROM users u
+                JOIN training t ON u.user_id = t.user_id
+                WHERE u.username = %s;
+            """, (user_nexus[message.chat.id],))
+            result = cursor.fetchone()
+            cursor.close()
+            connection.close()
+            if result:
+                user_info = f"Имя пользователя: {result[0]}\n"
+                user_info += f"Номер зачетной книжки: {result[1]}\n"
+                user_info += f"Направление: {result[2]}\n"
+                user_info += f"Институт: {result[3]}\n"
+                user_info += f"Кафедра: {result[4]}\n"
+                user_info += f"Группа: {result[5]}\n"
+                bot.send_message(message.chat.id, '⇓ ⇓ Ваша информация ⇓ ⇓ \n' + user_info)
+            else:
+                bot.send_message(message.chat.id, "Информация об обучении не найдена для данного пользователя")
+        except psycopg2.Error as error:
+            print("Error while executing SQL query:", error)
+            bot.send_message(message.chat.id, "Произошла ошибка при выполнении запроса к базе данных.")
+    else:
+        bot.send_message(message.chat.id, "Произошла ошибка при подключении к базе данных. Пожалуйста, попробуйте позже.")
 
 
 @bot.message_handler(commands=['grade'])
 def grade_command(message):
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=2)
-    test = types.KeyboardButton('Зачеты')
-    exams = types.KeyboardButton('Экзамены')
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True, row_width=4)
+    test = types.KeyboardButton('1-ый семестр')
+    test2 = types.KeyboardButton('2-ый семестр')
+    test3 = types.KeyboardButton('3-ый семестр')
+    test4 = types.KeyboardButton('4-ый семестр')
+    test5 = types.KeyboardButton('5-ый семестр')
+    test6 = types.KeyboardButton('6-ой семестр')
+    test7 = types.KeyboardButton('7-ой семестр')
+    test8 = types.KeyboardButton('8-ой семестр')
     back_button = types.KeyboardButton('Назад')
-    markup.add(test, exams, back_button)
-    bot.send_message(message.chat.id, '⇓ ⇓ Выберите нужную кнопку ⇓ ⇓ :', reply_markup=markup)
+    markup.add(test, test2, test3, test4, test5, test6, test7, test8, back_button)
+    bot.send_message(message.chat.id, '⇓ ⇓ Выберите семестр ⇓ ⇓ :', reply_markup=markup)
 
 
 # @bot.message_handler(commands=['timetable'])

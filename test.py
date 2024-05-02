@@ -1,5 +1,5 @@
 import hashlib
 
-password = "1234"
+password = "4567"
 hashed_password = hashlib.sha256(password.encode()).hexdigest()
-print(hashed_password)
+print('ХЭШ', hashed_password)
