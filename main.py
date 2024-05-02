@@ -11,11 +11,11 @@ user_nexus = {}
 def connect_to_database():
     try:
         connection = psycopg2.connect(
-            user="postgres",
-            password="0312",
-            host="localhost",
-            port="5432",
-            database="postgres"
+            user="",
+            password="",
+            host="",
+            port="",
+            database=""
         )
         print("Connected to PostgreSQL database!")
         return connection
@@ -46,7 +46,7 @@ def execute_query(query, params=None):
         return None
 
 
-bot = telebot.TeleBot('7115522268:AAFoTHMK--OYTBFi-l773-vFCRkaG5BVv38')
+bot = telebot.TeleBot('')
 
 
 def send_commands_list(chat_id):
