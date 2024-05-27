@@ -36,7 +36,7 @@ def execute_query(query, params=None):
             else:
                 cursor.execute(query)
             result = cursor.fetchall()
-            connection.commit()  # Фиксация изменений (если есть)
+            connection.commit()  
             cursor.close()
             connection.close()
             return result
@@ -79,7 +79,6 @@ def update_passwords_with_salt():
 
                 new_password_hash = hashlib.sha256((password_hash + salt).encode()).hexdigest()
 
-                # Обновляем пароль и соль в базе данных
                 cursor.execute("UPDATE users SET password_hash = %s, salt = %s WHERE id = %s", (new_password_hash, salt, user_id))
 
             connection.commit()
